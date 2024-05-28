@@ -1,199 +1,155 @@
-'use strict';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom/client';
+import io from 'socket.io-client';
 
-var React = require('react');
+const socket = io.connect();
 
-var socket = io.connect();
+const UsersList = ({ users }) => {
+  return (
+    <div className='users'>
+      <h3> 참여자들 </h3>
+      <ul>
+        {users.map((user, i) => (
+          <li key={i}>{user}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
-var UsersList = React.createClass({
-	render() {
-		return (
-			<div className='users'>
-				<h3> 참여자들 </h3>
-				<ul>
-					{
-						this.props.users.map((user, i) => {
-							return (
-								<li key={i}>
-									{user}
-								</li>
-							);
-						})
-					}
-				</ul>				
-			</div>
-		);
-	}
-});
+const Message = ({ user, text }) => {
+  return (
+    <div className="message">
+      <strong>{user} :</strong> 
+      <span>{text}</span>    
+    </div>
+  );
+};
 
-var Message = React.createClass({
-	render() {
-		return (
-			<div className="message">
-				<strong>{this.props.user} :</strong> 
-				<span>{this.props.text}</span>		
-			</div>
-		);
-	}
-});
+const MessageList = ({ messages }) => {
+  return (
+    <div className='messages'>
+      <h2> 채팅방 </h2>
+      {messages.map((message, i) => (
+        <Message key={i} user={message.user} text={message.text} />
+      ))}
+    </div>
+  );
+};
 
-var MessageList = React.createClass({
-	render() {
-		return (
-			<div className='messages'>
-				<h2> 채팅방 </h2>
-				{
-					this.props.messages.map((message, i) => {
-						return (
-							<Message
-								key={i}
-								user={message.user}
-								text={message.text} 
-							/>
-						);
-					})
-				} 
-			</div>
-		);
-	}
-});
+const MessageForm = ({ user, onMessageSubmit }) => {
+  const [text, setText] = useState('');
 
-var MessageForm = React.createClass({
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const message = {
+      user,
+      text
+    };
+    onMessageSubmit(message);
+    setText('');
+  };
 
-	getInitialState() {
-		return {text: ''};
-	},
+  return (
+    <div className='message_form'>
+      <form onSubmit={handleSubmit}>
+        <input
+          placeholder='메시지 입력'
+          className='textinput'
+          onChange={(e) => setText(e.target.value)}
+          value={text}
+        />
+        <h3></h3>
+      </form>
+    </div>
+  );
+};
 
-	handleSubmit(e) {
-		e.preventDefault();
-		var message = {
-			user : this.props.user,
-			text : this.state.text
-		}
-		this.props.onMessageSubmit(message);	
-		this.setState({ text: '' });
-	},
+const ChangeNameForm = ({ onChangeName }) => {
+  const [newName, setNewName] = useState('');
 
-	changeHandler(e) {
-		this.setState({ text : e.target.value });
-	},
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onChangeName(newName);
+    setNewName('');
+  };
 
-	render() {
-		return(
-			<div className='message_form'>
-				<form onSubmit={this.handleSubmit}>
-					<input
-						placeholder='메시지 입력'
-						className='textinput'
-						onChange={this.changeHandler}
-						value={this.state.text}
-					/>
-					<h3></h3>
-				</form>
-			</div>
-		);
-	}
-});
+  return (
+    <div className='change_name_form'>
+      <h3> 아이디 변경 </h3>
+      <form onSubmit={handleSubmit}>
+        <input
+          placeholder='변경할 아이디 입력'
+          onChange={(e) => setNewName(e.target.value)}
+          value={newName}
+        />
+      </form>  
+    </div>
+  );
+};
 
-var ChangeNameForm = React.createClass({
-	getInitialState() {
-		return {newName: ''};
-	},
+const ChatApp = () => {
+  const [users, setUsers] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [user, setUser] = useState('');
 
-	onKey(e) {
-		this.setState({ newName : e.target.value });
-	},
+  useEffect(() => {
+    socket.on('init', (data) => {
+      const { users, name } = data;
+      setUsers(users);
+      setUser(name);
+    });
 
-	handleSubmit(e) {
-		e.preventDefault();
-		var newName = this.state.newName;
-		this.props.onChangeName(newName);	
-		this.setState({ newName: '' });
-	},
+    socket.on('send:message', (message) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
 
-	render() {
-		return(
-			<div className='change_name_form'>
-				<h3> 아이디 변경 </h3>
-				<form onSubmit={this.handleSubmit}>
-					<input
-						placeholder='변경할 아이디 입력'
-						onChange={this.onKey}
-						value={this.state.newName} 
-					/>
-				</form>	
-			</div>
-		);
-	}
-});
+    socket.on('user:join', ({ name }) => {
+      setUsers((prevUsers) => [...prevUsers, name]);
+    });
 
-var ChatApp = React.createClass({
+    socket.on('user:left', ({ name }) => {
+      setUsers((prevUsers) => prevUsers.filter((user) => user !== name));
+    });
 
-	getInitialState() {
-		return {users: [], messages:[], text: ''};
-	},
+    socket.on('change:name', ({ oldName, newName }) => {
+      setUsers((prevUsers) => prevUsers.map((user) => (user === oldName ? newName : user)));
+    });
 
-	componentDidMount() {
-		socket.on('init', this._initialize);
-		socket.on('send:message', this._messageRecieve);
-		socket.on('user:join', this._userJoined);
-		socket.on('user:left', this._userLeft);
-		socket.on('change:name', this._userChangedName);
-	},
+    return () => {
+      socket.off('init');
+      socket.off('send:message');
+      socket.off('user:join');
+      socket.off('user:left');
+      socket.off('change:name');
+    };
+  }, []);
 
-	_initialize(data) {
-		var {users, name} = data;
-		this.setState({users, user: name});
-	},
+  const handleMessageSubmit = (message) => {
+    setMessages((prevMessages) => [...prevMessages, message]);
+    socket.emit('send:message', message);
+  };
 
-	_messageRecieve(message) {
-		var {messages} = this.state;
-		messages.push(message);
-		this.setState({messages});
-	},
+  const handleChangeName = (newName) => {
+    const oldName = user;
+    socket.emit('change:name', { name: newName }, (result) => {
+      if (!result) {
+        return alert('There was an error changing your name');
+      }
+      setUsers((prevUsers) => prevUsers.map((user) => (user === oldName ? newName : user)));
+      setUser(newName);
+    });
+  };
 
-	handleMessageSubmit(message) {
-		var {messages} = this.state;
-		messages.push(message);
-		this.setState({messages});
-		socket.emit('send:message', message);
-	},
+  return (
+    <div className='center'>
+      <UsersList users={users} />
+      <ChangeNameForm onChangeName={handleChangeName} />
+      <MessageList messages={messages} />
+      <MessageForm onMessageSubmit={handleMessageSubmit} user={user} />
+    </div>
+  );
+};
 
-	handleChangeName(newName) {
-		var oldName = this.state.user;
-		socket.emit('change:name', { name : newName}, (result) => {
-			if(!result) {
-				return alert('There was an error changing your name');
-			}
-			var {users} = this.state;
-			var index = users.indexOf(oldName);
-			users.splice(index, 1, newName);
-			this.setState({users, user: newName});
-		});
-	},
-
-	render() {
-		return (
-			<div>
-			<div className='center'>
-			<UsersList
-				users={this.state.users}
-			/>
-			<ChangeNameForm
-				onChangeName={this.handleChangeName}
-			/>
-			{/* <div> */}
-				<MessageList
-					messages={this.state.messages}
-				/>
-				<MessageForm
-					onMessageSubmit={this.handleMessageSubmit}
-					user={this.state.user}
-				/>
-			{/* </div> */}
-			</div>
-			</div>
-		);
-	}
-});
-
-React.render(<ChatApp/>, document.getElementById('app'));
+const root = ReactDOM.createRoot(document.getElementById('app'));
+root.render(<ChatApp />);

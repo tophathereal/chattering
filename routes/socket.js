@@ -1,8 +1,7 @@
-// Keep track of which names are used so that there are no duplicates
-var userNames = (function () {
-  var names = {};
+const userNames = (function () {
+  let names = {};
 
-  var claim = function (name) {
+  const claim = function (name) {
     if (!name || names[name]) {
       return false;
     } else {
@@ -12,9 +11,9 @@ var userNames = (function () {
   };
 
   // find the lowest unused "guest" name and claim it
-  var getGuestName = function () {
-    var name,
-      nextUserId = 1;
+  const getGuestName = function () {
+    let name;
+    let nextUserId = 1;
 
     do {
       name = 'Guest ' + nextUserId;
@@ -25,16 +24,11 @@ var userNames = (function () {
   };
 
   // serialize claimed names as an array
-  var get = function () {
-    var res = [];
-    for (user in names) {
-      res.push(user);
-    }
-
-    return res;
+  const get = function () {
+    return Object.keys(names);
   };
 
-  var free = function (name) {
+  const free = function (name) {
     if (names[name]) {
       delete names[name];
     }
@@ -46,11 +40,11 @@ var userNames = (function () {
     get: get,
     getGuestName: getGuestName
   };
-}());
+})();
 
 // export function for listening to the socket
 module.exports = function (socket) {
-  var name = userNames.getGuestName();
+  let name = userNames.getGuestName();  // 변경된 부분: const -> let
 
   // send the new user their name and a list of users
   socket.emit('init', {
@@ -74,11 +68,11 @@ module.exports = function (socket) {
   // validate a user's name change, and broadcast it on success
   socket.on('change:name', function (data, fn) {
     if (userNames.claim(data.name)) {
-      var oldName = name;
+      const oldName = name;
       userNames.free(oldName);
 
-      name = data.name;
-      
+      name = data.name;  // 변경된 부분: name을 let으로 선언하여 재할당 가능하게 함
+
       socket.broadcast.emit('change:name', {
         oldName: oldName,
         newName: name

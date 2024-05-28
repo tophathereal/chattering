@@ -6,6 +6,7 @@
 
 var express = require('express');
 var http = require('http');
+var socketIO = require('socket.io'); // 수정된 부분
 
 var socket = require('./routes/socket.js');
 
@@ -22,12 +23,13 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 /* Socket.io Communication */
-var io = require('socket.io').listen(server);
-io.sockets.on('connection', socket);
+var io = socketIO(server); // 수정된 부분
+io.on('connection', socket);
 
 /* Start server */
 server.listen(app.get('port'), function (){
   console.log('Express server listening on port %d in %s mode', app.get('port'), app.get('env'));
 });
+
 
 module.exports = app;

@@ -349,11 +349,11 @@ var ChatApp = React.createClass({
           </header>
           <div className="container">
             <div className="center-content">
-              <ChangeNameForm
-                onChangeName={this.handleChangeName}
-              />
               <LoginForm
                 onLogin={this.handleLogin}
+              />
+              <ChangeNameForm
+                onChangeName={this.handleChangeName}
               />
             </div>
           </div>
@@ -384,11 +384,11 @@ var ChatApp = React.createClass({
                 onRoomChange={this.handleRoomChange}
                 uniqueRooms={this.getUniqueRooms()}
               />
-              <ChangeNameForm
-                onChangeName={this.handleChangeName}
-              />
               <LoginForm
                 onLogin={this.handleLogin}
+              />
+              <ChangeNameForm
+                onChangeName={this.handleChangeName}
               />
             </div>
             <div className="center-content">

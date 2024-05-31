@@ -512,11 +512,11 @@ var ChatApp = React.createClass({
           React.createElement(
             'div',
             { className: 'center-content' },
-            React.createElement(ChangeNameForm, {
-              onChangeName: this.handleChangeName
-            }),
             React.createElement(LoginForm, {
               onLogin: this.handleLogin
+            }),
+            React.createElement(ChangeNameForm, {
+              onChangeName: this.handleChangeName
             })
           )
         )
@@ -592,11 +592,11 @@ var ChatApp = React.createClass({
               onRoomChange: this.handleRoomChange,
               uniqueRooms: this.getUniqueRooms()
             }),
-            React.createElement(ChangeNameForm, {
-              onChangeName: this.handleChangeName
-            }),
             React.createElement(LoginForm, {
               onLogin: this.handleLogin
+            }),
+            React.createElement(ChangeNameForm, {
+              onChangeName: this.handleChangeName
             })
           ),
           React.createElement(
